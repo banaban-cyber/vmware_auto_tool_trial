@@ -14,7 +14,7 @@ Windows 10／11 的本機小工具，使用內建 Windows PowerShell 5.1 與視�
 
 1. 安裝 VMware／Omnissa Horizon Client，確認能手動連線公司 Server，並已註冊 `vmware-view` URL 通訊協定。公司所需 VPN 也請先連好。
 2. 將本目錄下載到 Windows 的固定位置。用記事本準備自己的文字檔，例如 `C:\Users\你的名字\Documents\work-notes.txt`，可包含你需要的帳號及遠端 IP。
-3. 雙擊 `Start-WorkMode.cmd`。
+3. 雙擊 `Start-WorkMode.cmd`。若出現下載檔案封鎖提示，先檢閱列出的兩個腳本，確認信任後輸入 `YES`；只會解除這兩個檔案的下載標記，不修改系統原則。
 4. 填入 Server，例如 `horizon.company.com` 或 `https://horizon.company.com:443`；選擇文字檔；選填本機 Chrome 網址，例如 `https://intranet.company.com/login`。
 5. 按「儲存設定」或直接按「進入工作模式」。在 Horizon 完成公司要求的登入，再按 Chrome 按鈕。
 
@@ -22,7 +22,23 @@ Windows 10／11 的本機小工具，使用內建 Windows PowerShell 5.1 與視�
 
 設定儲存在 `%LOCALAPPDATA%\WorkModeLauncher\settings.json`。移除該資料夾可重設偏好，不會刪除你的文字檔。
 
-啟動器以目前程序的 `RemoteSigned` 原則執行，不修改系統執行原則。若 Windows 將下載的腳本標記為網際網路檔案，先檢閱程式碼，再於檔案內容解除封鎖。若公司群組原則禁止腳本執行，請使用公司核准的方式，不要繞過原則。
+啟動器以目前程序的 `RemoteSigned` 原則執行，不修改系統執行原則。若 Windows 將下載的腳本標記為網際網路檔案，啟動器會在執行腳本前詢問是否解除 `WorkMode.ps1` 與 `WorkMode.Core.ps1` 的下載封鎖。直接按 Enter 可取消。若公司群組原則要求簽署腳本或禁止腳本執行，啟動器會停止，請使用公司核准的方式。
+
+### 舊版出現「未經數位簽署／PSSecurityException」
+
+這通常是 GitHub ZIP 解壓後的腳本仍帶有 Windows 下載標記。可以下載最新版，或針對既有檔案處理：
+
+1. 確認信任程式碼後，在 `WorkMode.ps1` 上按右鍵 →「內容」→ 勾選「解除封鎖」→「套用」。
+2. 對同資料夾的 `WorkMode.Core.ps1` 做相同操作。
+3. 再雙擊 `Start-WorkMode.cmd`。
+
+也可以在這兩個腳本所在的資料夾開啟 PowerShell，執行下列指令（不需要系統管理員權限）：
+
+```powershell
+Unblock-File -LiteralPath .\WorkMode.ps1, .\WorkMode.Core.ps1
+```
+
+如果沒有「解除封鎖」選項，或處理後仍然被擋，執行 `Get-ExecutionPolicy -List` 查看是否有 `MachinePolicy` 或 `UserPolicy` 限制；若有，交由公司 IT 確認可用方式。
 
 ## 帳密與後續擴充
 

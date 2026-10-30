@@ -1,3 +1,7 @@
 @echo off
-powershell.exe -NoProfile -STA -ExecutionPolicy RemoteSigned -File "%~dp0WorkMode.ps1"
-if errorlevel 1 pause
+setlocal
+set "WORKMODE_LAUNCH_DIR=%~dp0"
+powershell.exe -NoProfile -STA -ExecutionPolicy RemoteSigned -Command "$ErrorActionPreference = 'Stop'; try { if ((Get-ExecutionPolicy) -in @('AllSigned', 'Restricted')) { throw 'Your effective PowerShell policy requires signed scripts or blocks scripts. Contact your administrator for an approved way to run this tool.' }; $files = @('WorkMode.ps1', 'WorkMode.Core.ps1') | ForEach-Object { Join-Path $env:WORKMODE_LAUNCH_DIR $_ }; foreach ($file in $files) { if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw ('Missing file: ' + $file) } }; $blocked = @($files | Where-Object { Get-Item -LiteralPath $_ -Stream Zone.Identifier -ErrorAction SilentlyContinue }); if ($blocked.Count) { Write-Host 'Windows marked these downloaded scripts as Internet files:'; $blocked | ForEach-Object { Write-Host $_ }; Write-Host 'Review the code before allowing these two files. No system policy will be changed.'; if ((Read-Host 'Type YES to unblock these files and start, or press Enter to cancel') -cne 'YES') { exit 1 }; foreach ($file in $blocked) { Unblock-File -LiteralPath $file -ErrorAction Stop } }; & (Join-Path $env:WORKMODE_LAUNCH_DIR 'WorkMode.ps1'); if (-not $?) { exit 1 } } catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }"
+set "WORKMODE_EXIT_CODE=%ERRORLEVEL%"
+if not "%WORKMODE_EXIT_CODE%"=="0" pause
+exit /b %WORKMODE_EXIT_CODE%
